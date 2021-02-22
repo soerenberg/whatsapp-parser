@@ -20,6 +20,7 @@ data Time = Time
 data Message = Message
     { date :: Date
     , time :: Time
+    , sender :: String
     , body :: String
     } deriving (Eq, Show)
 
@@ -54,23 +55,30 @@ parseTime = do
     minute <- read <$> many digit
     return Time {hour = hour, minute = minute}
 
-parseHeader :: Parser (Date, Time)
+parseHeader :: Parser (Date, Time, String)
 parseHeader = do
     startOfLine
     date <- lexeme parseDate
     lexeme $ char ','
     time <- lexeme parseTime
-    return (date, time)
+    void <- lexeme $ char '-'
+    sender <- manyTill anyChar $ lexeme $ char ':'
+    return (date, time, sender)
+
+headerAhead :: Parser ()
+headerAhead = lookAhead parseHeader *> return ()
 
 parseBody :: Parser String
-parseBody = manyTill anyChar (char '#') -- parseHeader  -- TODO eof?
+parseBody = manyTill anyChar $ eof <|> headerAhead
 
 parseMessage :: Parser Message
 parseMessage = do
-    (d, t) <- parseHeader
+    (d, t, s) <- parseHeader
     b <- parseBody
-    char '\n'
-    return Message {date = d, time = t, body = b}
+    return Message { date = d
+                   , time = t
+                   , sender = s
+                   , body = b}
 
 parseMessages :: Parser [Message]
 parseMessages = many parseMessage
@@ -79,5 +87,6 @@ main :: IO ()
 main = do
     (fileName:_) <- getArgs
     input <- readFile fileName
-    let s = parse parseMessages "wa" input
+    putStrLn input
+    let s = parse parseMessages "whatsapplog" input
     putStrLn $ show s
