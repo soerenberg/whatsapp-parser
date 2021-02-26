@@ -1,7 +1,9 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Lib
-( Date
-, Time
-, Message
+( Date(..)
+, Time(..)
+, Message(..)
 , parseMessage
 , parseMessages
 ) where
@@ -10,25 +12,30 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.Parsec.Prim hiding (try)
 
 import Control.Monad
+import GHC.Generics
+import Data.Aeson
 
 
 data Date = Date
     { day :: Int
     , month :: Int
     , year :: Int
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
+instance ToJSON Date
 
 data Time = Time
     { hour :: Int
     , minute :: Int
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
+instance ToJSON Time
 
 data Message = Message
     { date :: Date
     , time :: Time
     , sender :: String
     , body :: String
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
+instance ToJSON Message
 
 whitespace :: Parser String
 whitespace = many $ oneOf " \n\t"
